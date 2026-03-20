@@ -67,9 +67,10 @@ export async function POST(
 
     return NextResponse.json({ success: true, data: { id: data.id } })
   } catch (error) {
-    console.error('Analyze error:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('Analyze error:', message)
     return NextResponse.json(
-      { success: false, error: 'Analysis failed' },
+      { success: false, error: `Analysis failed: ${message}` },
       { status: 500 }
     )
   }
