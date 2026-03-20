@@ -81,7 +81,7 @@ export async function analyzeRepo(params: {
     throw new Error('No AI provider configured (GEMINI_API_KEY or ANTHROPIC_API_KEY required)')
   }
 
-  let lastError: Error | null = null
+  const errors: string[] = []
 
   for (const provider of providers) {
     try {
@@ -91,10 +91,11 @@ export async function analyzeRepo(params: {
       console.log(`AI analysis succeeded with ${provider.name}`)
       return result
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error))
-      console.error(`${provider.name} failed: ${lastError.message}`)
+      const msg = error instanceof Error ? error.message : String(error)
+      errors.push(`${provider.name}: ${msg}`)
+      console.error(`${provider.name} failed: ${msg}`)
     }
   }
 
-  throw lastError || new Error('All AI providers failed')
+  throw new Error(`All AI providers failed — ${errors.join(' | ')}`)
 }
