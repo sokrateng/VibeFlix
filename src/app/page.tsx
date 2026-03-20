@@ -2,9 +2,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import { HeroSection } from '@/components/HeroSection'
 import { CategoryRow } from '@/components/CategoryRow'
 import type { Project, Category } from '@/lib/types'
-import { REVALIDATE_INTERVAL } from '@/lib/constants'
-
-export const revalidate = REVALIDATE_INTERVAL
+export const revalidate = 3600
 
 async function getPublishedProjects(): Promise<Project[]> {
   const supabase = createServerClient()

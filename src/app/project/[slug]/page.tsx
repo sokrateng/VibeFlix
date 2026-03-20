@@ -3,9 +3,7 @@ import Link from 'next/link'
 import { createServerClient } from '@/lib/supabase-server'
 import { ScreenshotCarousel } from '@/components/ScreenshotCarousel'
 import type { Project } from '@/lib/types'
-import { REVALIDATE_INTERVAL } from '@/lib/constants'
-
-export const revalidate = REVALIDATE_INTERVAL
+export const revalidate = 3600
 
 interface PageProps {
   params: Promise<{ slug: string }>
