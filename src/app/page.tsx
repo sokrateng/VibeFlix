@@ -2,7 +2,8 @@ import { createServerClient } from '@/lib/supabase-server'
 import { HeroSection } from '@/components/HeroSection'
 import { CategoryRow } from '@/components/CategoryRow'
 import type { Project, Category } from '@/lib/types'
-export const revalidate = 3600
+
+export const dynamic = 'force-dynamic'
 
 async function getPublishedProjects(): Promise<Project[]> {
   const supabase = createServerClient()

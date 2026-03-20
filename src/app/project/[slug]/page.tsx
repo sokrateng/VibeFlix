@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { createServerClient } from '@/lib/supabase-server'
 import { ScreenshotCarousel } from '@/components/ScreenshotCarousel'
 import type { Project } from '@/lib/types'
-export const revalidate = 3600
+
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: Promise<{ slug: string }>
