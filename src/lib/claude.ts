@@ -1,7 +1,34 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { createServerClient } from './supabase-server'
 import type { AiAnalysisResult } from './types'
 import { DEFAULT_CATEGORIES } from './constants'
+
+interface AiConfig {
+  provider: string
+  geminiKey: string
+  geminiModel: string
+  claudeKey: string
+  claudeModel: string
+}
+
+async function getAiConfig(): Promise<AiConfig> {
+  const supabase = createServerClient()
+  const { data } = await supabase.from('settings').select('key, value')
+
+  const settings: Record<string, string> = {}
+  for (const row of data || []) {
+    settings[row.key] = row.value
+  }
+
+  return {
+    provider: settings.ai_provider || 'gemini',
+    geminiKey: settings.gemini_api_key || process.env.GEMINI_API_KEY || '',
+    geminiModel: settings.gemini_model || 'gemini-2.0-flash',
+    claudeKey: settings.anthropic_api_key || process.env.ANTHROPIC_API_KEY || '',
+    claudeModel: settings.anthropic_model || 'claude-haiku-4-5-20251001',
+  }
+}
 
 function buildPrompt(params: {
   readme: string
@@ -38,24 +65,20 @@ function parseAiResponse(text: string): AiAnalysisResult {
   return JSON.parse(jsonMatch[0]) as AiAnalysisResult
 }
 
-async function analyzeWithClaude(prompt: string): Promise<string> {
-  const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  })
-
+async function analyzeWithClaude(prompt: string, apiKey: string, model: string): Promise<string> {
+  const anthropic = new Anthropic({ apiKey })
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model,
     max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }],
   })
-
   return message.content[0].type === 'text' ? message.content[0].text : ''
 }
 
-async function analyzeWithGemini(prompt: string): Promise<string> {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' })
-  const result = await model.generateContent(prompt)
+async function analyzeWithGemini(prompt: string, apiKey: string, model: string): Promise<string> {
+  const genAI = new GoogleGenerativeAI(apiKey)
+  const genModel = genAI.getGenerativeModel({ model })
+  const result = await genModel.generateContent(prompt)
   return result.response.text()
 }
 
@@ -65,20 +88,28 @@ export async function analyzeRepo(params: {
   description: string | null
   repoName: string
 }): Promise<AiAnalysisResult> {
+  const config = await getAiConfig()
   const prompt = buildPrompt(params)
 
-  // Try Gemini first (free tier), fallback to Claude
+  // Primary provider first, then fallback
   const providers = []
 
-  if (process.env.GEMINI_API_KEY) {
-    providers.push({ name: 'Gemini', fn: () => analyzeWithGemini(prompt) })
+  if (config.provider === 'gemini' && config.geminiKey) {
+    providers.push({ name: 'Gemini', fn: () => analyzeWithGemini(prompt, config.geminiKey, config.geminiModel) })
   }
-  if (process.env.ANTHROPIC_API_KEY) {
-    providers.push({ name: 'Claude', fn: () => analyzeWithClaude(prompt) })
+  if (config.provider === 'claude' && config.claudeKey) {
+    providers.push({ name: 'Claude', fn: () => analyzeWithClaude(prompt, config.claudeKey, config.claudeModel) })
+  }
+  // Fallback: the other provider
+  if (config.provider !== 'gemini' && config.geminiKey) {
+    providers.push({ name: 'Gemini (fallback)', fn: () => analyzeWithGemini(prompt, config.geminiKey, config.geminiModel) })
+  }
+  if (config.provider !== 'claude' && config.claudeKey) {
+    providers.push({ name: 'Claude (fallback)', fn: () => analyzeWithClaude(prompt, config.claudeKey, config.claudeModel) })
   }
 
   if (providers.length === 0) {
-    throw new Error('No AI provider configured (GEMINI_API_KEY or ANTHROPIC_API_KEY required)')
+    throw new Error('AI ayari yapilmamis — Admin panelden AI Ayarlari sekmesinde key girin')
   }
 
   const errors: string[] = []
@@ -97,5 +128,5 @@ export async function analyzeRepo(params: {
     }
   }
 
-  throw new Error(`All AI providers failed — ${errors.join(' | ')}`)
+  throw new Error(`Tum AI saglayicilar basarisiz — ${errors.join(' | ')}`)
 }

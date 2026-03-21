@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AdminProjectCard } from '@/components/AdminProjectCard'
+import { AiSettings } from '@/components/AiSettings'
 import type { Project } from '@/lib/types'
 
 export default function AdminPage() {
@@ -11,6 +12,7 @@ export default function AdminPage() {
   const [filter, setFilter] = useState<string>('ALL')
   const [newRepoName, setNewRepoName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'projects' | 'ai'>('projects')
 
   const fetchProjects = useCallback(async () => {
     const res = await fetch('/api/projects', {
@@ -98,55 +100,87 @@ export default function AdminPage() {
           VibeFlix Admin
         </h1>
 
-        <div className="bg-[#1F1F1F] rounded-lg p-4 mb-6 flex gap-2">
-          <input
-            type="text"
-            value={newRepoName}
-            onChange={(e) => setNewRepoName(e.target.value)}
-            placeholder="Repo adi (orn: SAP_Gateway)"
-            className="flex-1 bg-black/30 text-white border border-gray-600 rounded px-3 py-2"
-            onKeyDown={(e) => e.key === 'Enter' && handleAddRepo()}
-          />
+        {/* Tab Navigation */}
+        <div className="flex gap-1 mb-6 border-b border-gray-700 pb-1">
           <button
-            onClick={handleAddRepo}
-            disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 disabled:opacity-50"
+            onClick={() => setActiveTab('projects')}
+            className={`px-4 py-2 rounded-t text-sm font-bold ${
+              activeTab === 'projects'
+                ? 'bg-[#1F1F1F] text-white'
+                : 'text-gray-500 hover:text-white'
+            }`}
           >
-            {loading ? 'Analiz...' : '+ Ekle & Analiz'}
+            Projeler
+          </button>
+          <button
+            onClick={() => setActiveTab('ai')}
+            className={`px-4 py-2 rounded-t text-sm font-bold ${
+              activeTab === 'ai'
+                ? 'bg-[#1F1F1F] text-white'
+                : 'text-gray-500 hover:text-white'
+            }`}
+          >
+            AI Ayarlari
           </button>
         </div>
 
-        <div className="flex gap-2 mb-6">
-          {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(
-            (s) => (
+        {/* AI Settings Tab */}
+        {activeTab === 'ai' && <AiSettings token={token} />}
+
+        {/* Projects Tab */}
+        {activeTab === 'projects' && (
+          <>
+            <div className="bg-[#1F1F1F] rounded-lg p-4 mb-6 flex gap-2">
+              <input
+                type="text"
+                value={newRepoName}
+                onChange={(e) => setNewRepoName(e.target.value)}
+                placeholder="Repo adi (orn: SAP_Gateway)"
+                className="flex-1 bg-black/30 text-white border border-gray-600 rounded px-3 py-2"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddRepo()}
+              />
               <button
-                key={s}
-                onClick={() => setFilter(s)}
-                className={`px-3 py-1 rounded text-sm ${
-                  filter === s
-                    ? 'bg-[#E50914] text-white'
-                    : 'bg-[#1F1F1F] text-gray-400 hover:text-white'
-                }`}
+                onClick={handleAddRepo}
+                disabled={loading}
+                className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 disabled:opacity-50"
               >
-                {s} ({counts[s]})
+                {loading ? 'Analiz...' : '+ Ekle & Analiz'}
               </button>
-            )
-          )}
-        </div>
+            </div>
 
-        {filtered.map((project) => (
-          <AdminProjectCard
-            key={project.id}
-            project={project}
-            token={token}
-            onUpdate={fetchProjects}
-          />
-        ))}
+            <div className="flex gap-2 mb-6">
+              {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(
+                (s) => (
+                  <button
+                    key={s}
+                    onClick={() => setFilter(s)}
+                    className={`px-3 py-1 rounded text-sm ${
+                      filter === s
+                        ? 'bg-[#E50914] text-white'
+                        : 'bg-[#1F1F1F] text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {s} ({counts[s]})
+                  </button>
+                )
+              )}
+            </div>
 
-        {filtered.length === 0 && (
-          <p className="text-gray-500 text-center py-8">
-            Bu filtrede proje yok
-          </p>
+            {filtered.map((project) => (
+              <AdminProjectCard
+                key={project.id}
+                project={project}
+                token={token}
+                onUpdate={fetchProjects}
+              />
+            ))}
+
+            {filtered.length === 0 && (
+              <p className="text-gray-500 text-center py-8">
+                Bu filtrede proje yok
+              </p>
+            )}
+          </>
         )}
       </div>
     </main>
