@@ -18,9 +18,17 @@ export async function PATCH(
   const body = await request.json()
   const supabase = createServerClient()
 
+  const ALLOWED_FIELDS = ['status', 'featured', 'featured_order', 'description', 'category', 'ai_trailer', 'features', 'use_case', 'complexity', 'sort_order', 'name', 'demo_url', 'activity', 'tech_stack'] as const
+  const patch: Record<string, unknown> = {}
+  for (const field of ALLOWED_FIELDS) {
+    if (body[field] !== undefined) {
+      patch[field] = body[field]
+    }
+  }
+
   const { data, error } = await supabase
     .from('projects')
-    .update(body)
+    .update(patch)
     .eq('id', id)
     .select()
     .single()

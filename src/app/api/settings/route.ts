@@ -25,7 +25,11 @@ export async function GET(
 
   const settings: Record<string, string> = {}
   for (const row of data || []) {
-    settings[row.key] = row.value
+    if (row.key === 'gemini_api_key' || row.key === 'anthropic_api_key') {
+      settings[row.key] = row.value ? '••••••••' + row.value.slice(-4) : ''
+    } else {
+      settings[row.key] = row.value
+    }
   }
 
   return NextResponse.json({ success: true, data: settings })
@@ -45,11 +49,14 @@ export async function PUT(
     const body = await request.json() as Record<string, string>
     const supabase = createServerClient()
 
-    const entries = Object.entries(body)
-    for (const [key, value] of entries) {
-      await supabase
-        .from('settings')
-        .upsert({ key, value }, { onConflict: 'key' })
+    const VALID_KEYS = ['ai_enabled', 'ai_provider', 'gemini_api_key', 'gemini_model', 'anthropic_api_key', 'anthropic_model'] as const
+    const validKeySet = new Set<string>(VALID_KEYS)
+
+    const entries = Object.entries(body).filter(([key]) => validKeySet.has(key))
+
+    const rows = entries.map(([key, value]) => ({ key, value: value as string }))
+    if (rows.length > 0) {
+      await supabase.from('settings').upsert(rows, { onConflict: 'key' })
     }
 
     return NextResponse.json({ success: true })

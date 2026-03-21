@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import crypto from 'crypto'
 
 export function verifyAdminToken(request: NextRequest): boolean {
   const authHeader = request.headers.get('Authorization')
@@ -10,5 +11,9 @@ export function verifyAdminToken(request: NextRequest): boolean {
     return false
   }
 
-  return token === envToken
+  if (!token || token.length !== envToken.length) {
+    return false
+  }
+
+  return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(envToken))
 }

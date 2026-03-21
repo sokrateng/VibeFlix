@@ -38,10 +38,18 @@ export async function POST(
       )
     }
 
+    const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: 'Dosya 50MB limitini asiyor' },
+        { status: 413 }
+      )
+    }
+
     const supabase = createServerClient()
     const buffer = await file.arrayBuffer()
-    const ext = file.name.split('.').pop() || 'bin'
-    const storagePath = `${projectId}/${Date.now()}-${file.name}`
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const storagePath = `${projectId}/${Date.now()}-${safeName}`
 
     const { error: uploadError } = await supabase.storage
       .from('attachments')

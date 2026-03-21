@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAdminToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const url = request.nextUrl.searchParams.get('url')
+  if (!verifyAdminToken(request)) {
+    return new NextResponse('Unauthorized', { status: 401 })
+  }
 
+  const url = request.nextUrl.searchParams.get('url')
   if (!url) {
     return new NextResponse('url parameter required', { status: 400 })
   }
 
   try {
+    const parsed = new URL(url)
+    if (!parsed.hostname.endsWith('.supabase.co')) {
+      return new NextResponse('Forbidden: only Supabase storage URLs allowed', { status: 403 })
+    }
+
     const res = await fetch(url)
     const html = await res.text()
 
