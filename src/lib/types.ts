@@ -23,6 +23,7 @@ export interface Project {
   created_at: string
   updated_at: string
   screenshots?: Screenshot[]
+  attachments?: Attachment[]
 }
 
 export interface Screenshot {
@@ -51,6 +52,19 @@ export interface AiAnalysisResult {
   features: string
   use_case: string
   complexity: ComplexityLevel
+}
+
+export type AttachmentType = 'screenshot' | 'presentation' | 'html' | 'other'
+
+export interface Attachment {
+  id: string
+  project_id: string
+  file_url: string
+  file_name: string
+  file_type: AttachmentType
+  mime_type: string
+  sort_order: number
+  created_at: string
 }
 
 export interface ApiResponse<T> {

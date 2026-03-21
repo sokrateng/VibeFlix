@@ -14,7 +14,7 @@ async function getProject(slug: string): Promise<Project | null> {
   const supabase = createServerClient()
   const { data } = await supabase
     .from('projects')
-    .select('*, screenshots(*)')
+    .select('*, screenshots(*), attachments(*)')
     .eq('slug', slug)
     .eq('status', 'APPROVED')
     .single()
@@ -147,6 +147,65 @@ export default async function ProjectPage({ params }: PageProps) {
             </p>
           </section>
         )}
+
+        {/* Presentations & HTML Attachments */}
+        {(() => {
+          const attachments = project.attachments || []
+          const presentations = attachments.filter(a => a.file_type === 'presentation')
+          const htmlFiles = attachments.filter(a => a.file_type === 'html')
+          const hasContent = presentations.length > 0 || htmlFiles.length > 0
+
+          if (!hasContent) return null
+
+          return (
+            <section className="mt-4 bg-[#1F1F1F] rounded-lg p-6">
+              <h2 className="text-xl font-bold text-white mb-4">
+                Proje Dokumanlari
+              </h2>
+
+              {presentations.map((a) => (
+                <div key={a.id} className="mb-3 flex items-center gap-3">
+                  <span className="text-2xl">📊</span>
+                  <div>
+                    <a
+                      href={a.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:underline"
+                    >
+                      {a.file_name}
+                    </a>
+                    <p className="text-gray-500 text-xs">PowerPoint Sunum</p>
+                  </div>
+                </div>
+              ))}
+
+              {htmlFiles.map((a) => (
+                <div key={a.id} className="mb-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl">🌐</span>
+                    <div>
+                      <a
+                        href={a.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:underline"
+                      >
+                        {a.file_name}
+                      </a>
+                      <p className="text-gray-500 text-xs">HTML Icerik</p>
+                    </div>
+                  </div>
+                  <iframe
+                    src={a.file_url}
+                    className="w-full h-[400px] rounded border border-gray-700 bg-white"
+                    title={a.file_name}
+                  />
+                </div>
+              ))}
+            </section>
+          )
+        })()}
       </div>
     </main>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { FileUploader } from './FileUploader'
 import type { Project, ComplexityLevel } from '@/lib/types'
 
 interface AdminProjectCardProps {
@@ -309,6 +310,14 @@ export function AdminProjectCard({
           Sil
         </button>
       </div>
+
+      {/* File Upload Section */}
+      <FileUploader
+        projectId={project.id}
+        token={token}
+        attachments={project.attachments || []}
+        onUpdate={onUpdate}
+      />
     </div>
   )
 }

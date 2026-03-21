@@ -18,7 +18,7 @@ export async function GET(
 
   let query = supabase
     .from('projects')
-    .select('*, screenshots(*)')
+    .select('*, screenshots(*), attachments(*)')
     .order('created_at', { ascending: false })
 
   if (status) {

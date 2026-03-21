@@ -9,7 +9,7 @@ async function getPublishedProjects(): Promise<Project[]> {
   const supabase = createServerClient()
   const { data } = await supabase
     .from('projects')
-    .select('*, screenshots(*)')
+    .select('*, screenshots(*), attachments(*)')
     .eq('status', 'APPROVED')
     .order('sort_order', { ascending: true })
   return (data as Project[]) || []
