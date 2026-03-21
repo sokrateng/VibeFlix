@@ -19,6 +19,8 @@ export interface Project {
   features: string
   use_case: string
   complexity: ComplexityLevel
+  featured: boolean
+  featured_order: number
   sort_order: number
   created_at: string
   updated_at: string

@@ -1,5 +1,5 @@
 import { createServerClient } from '@/lib/supabase-server'
-import { HeroSection } from '@/components/HeroSection'
+import { HeroSlider } from '@/components/HeroSlider'
 import { CategoryRow } from '@/components/CategoryRow'
 import type { Project, Category } from '@/lib/types'
 
@@ -30,7 +30,16 @@ export default async function HomePage() {
     getCategories(),
   ])
 
-  const heroProject = projects[0]
+  const featuredProjects = projects
+    .filter((p) => p.featured)
+    .sort((a, b) => a.featured_order - b.featured_order)
+
+  // If no featured selected, use the 3 most recent
+  const heroProjects =
+    featuredProjects.length > 0
+      ? featuredProjects
+      : projects.slice(0, 3)
+
   const projectsByCategory = categories
     .map((cat) => ({
       ...cat,
@@ -44,7 +53,7 @@ export default async function HomePage() {
         <h1 className="text-2xl font-bold text-[#E50914]">VibeFlix</h1>
       </header>
 
-      {heroProject && <HeroSection project={heroProject} />}
+      {heroProjects.length > 0 && <HeroSlider projects={heroProjects} />}
 
       <div className="relative z-10 -mt-8">
         {projectsByCategory.map((cat) => (

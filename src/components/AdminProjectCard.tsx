@@ -73,6 +73,18 @@ export function AdminProjectCard({
     onUpdate()
   }
 
+  async function toggleFeatured() {
+    await fetch(`/api/projects/${project.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ featured: !project.featured }),
+    })
+    onUpdate()
+  }
+
   async function analyzeRepo() {
     setAnalyzing(true)
     const repoName = project.github_repo.split('/')[1]
@@ -110,7 +122,17 @@ export function AdminProjectCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
+          <button
+            onClick={toggleFeatured}
+            className={`text-lg ${project.featured ? 'text-yellow-400' : 'text-gray-600 hover:text-yellow-400'}`}
+            title={project.featured ? 'Vitrin\'den kaldir' : 'Vitrin\'e ekle'}
+          >
+            ★
+          </button>
           <h3 className="text-white font-bold">{project.name}</h3>
+          {project.featured && (
+            <span className="bg-yellow-600 text-white text-[10px] px-1.5 py-0.5 rounded">VITRIN</span>
+          )}
           {project.complexity && (
             <span className={`${complexityColors[project.complexity] || 'bg-gray-600'} text-white text-[10px] px-1.5 py-0.5 rounded`}>
               {complexityLabels[project.complexity] || project.complexity}
