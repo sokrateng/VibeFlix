@@ -206,10 +206,9 @@ export default async function ProjectPage({ params }: PageProps) {
                     </a>
                   </div>
                   <iframe
-                    src={`https://docs.google.com/gview?url=${encodeURIComponent(a.file_url)}&embedded=true`}
-                    className="w-full h-[500px] rounded border border-gray-700 bg-white"
+                    src={`/api/html-proxy?url=${encodeURIComponent(a.file_url)}`}
+                    className="w-full h-[600px] rounded border border-gray-700 bg-white"
                     title={a.file_name}
-                    sandbox="allow-scripts allow-same-origin"
                   />
                 </div>
               ))}
