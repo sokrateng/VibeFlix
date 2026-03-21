@@ -5,14 +5,25 @@ import { AdminProjectCard } from '@/components/AdminProjectCard'
 import { AiSettings } from '@/components/AiSettings'
 import type { Project } from '@/lib/types'
 
+interface GitHubRepo {
+  name: string
+  full_name: string
+  description: string | null
+  language: string | null
+  updated_at: string
+  homepage: string | null
+}
+
 export default function AdminPage() {
   const [token, setToken] = useState('')
   const [authenticated, setAuthenticated] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
   const [filter, setFilter] = useState<string>('ALL')
-  const [newRepoName, setNewRepoName] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'projects' | 'ai'>('projects')
+  const [githubRepos, setGithubRepos] = useState<GitHubRepo[]>([])
+  const [selectedRepo, setSelectedRepo] = useState('')
+  const [loadingRepos, setLoadingRepos] = useState(false)
 
   const fetchProjects = useCallback(async () => {
     const res = await fetch('/api/projects', {
@@ -20,6 +31,16 @@ export default function AdminPage() {
     })
     const json = await res.json()
     if (json.success) setProjects(json.data)
+  }, [token])
+
+  const fetchGithubRepos = useCallback(async () => {
+    setLoadingRepos(true)
+    const res = await fetch('/api/github-repos', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const json = await res.json()
+    if (json.success) setGithubRepos(json.data)
+    setLoadingRepos(false)
   }, [token])
 
   useEffect(() => {
@@ -31,8 +52,11 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    if (authenticated) fetchProjects()
-  }, [authenticated, fetchProjects])
+    if (authenticated) {
+      fetchProjects()
+      fetchGithubRepos()
+    }
+  }, [authenticated, fetchProjects, fetchGithubRepos])
 
   function handleLogin() {
     localStorage.setItem('vibeflix-admin-token', token)
@@ -59,7 +83,7 @@ export default function AdminPage() {
   }
 
   async function handleAddRepo() {
-    if (!newRepoName.trim()) return
+    if (!selectedRepo) return
     setLoading(true)
     await fetch('/api/analyze', {
       method: 'POST',
@@ -67,9 +91,9 @@ export default function AdminPage() {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ repoName: newRepoName.trim() }),
+      body: JSON.stringify({ repoName: selectedRepo }),
     })
-    setNewRepoName('')
+    setSelectedRepo('')
     setLoading(false)
     fetchProjects()
   }
@@ -99,6 +123,8 @@ export default function AdminPage() {
       </main>
     )
   }
+
+  const addedRepoNames = new Set(projects.map((p) => p.github_repo.split('/')[1]))
 
   const filtered =
     filter === 'ALL'
@@ -149,22 +175,48 @@ export default function AdminPage() {
         {/* Projects Tab */}
         {activeTab === 'projects' && (
           <>
-            <div className="bg-[#1F1F1F] rounded-lg p-4 mb-6 flex gap-2">
-              <input
-                type="text"
-                value={newRepoName}
-                onChange={(e) => setNewRepoName(e.target.value)}
-                placeholder="Repo adi (orn: SAP_Gateway)"
-                className="flex-1 bg-black/30 text-white border border-gray-600 rounded px-3 py-2"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddRepo()}
-              />
-              <button
-                onClick={handleAddRepo}
-                disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? 'Analiz...' : '+ Ekle & Analiz'}
-              </button>
+            {/* Repo Selector */}
+            <div className="bg-[#1F1F1F] rounded-lg p-4 mb-6">
+              <p className="text-gray-400 text-xs mb-2">GitHub Repo Sec</p>
+              <div className="flex gap-2">
+                <select
+                  value={selectedRepo}
+                  onChange={(e) => setSelectedRepo(e.target.value)}
+                  className="flex-1 bg-black/30 text-white border border-gray-600 rounded px-3 py-2 text-sm"
+                  disabled={loadingRepos}
+                >
+                  <option value="">
+                    {loadingRepos ? 'Repolar yukleniyor...' : '-- Repo sec --'}
+                  </option>
+                  {githubRepos.map((repo) => {
+                    const isAdded = addedRepoNames.has(repo.name)
+                    return (
+                      <option
+                        key={repo.name}
+                        value={repo.name}
+                        disabled={isAdded}
+                      >
+                        {repo.name}
+                        {repo.language ? ` (${repo.language})` : ''}
+                        {isAdded ? ' — Eklendi' : ''}
+                        {repo.description ? ` — ${repo.description.slice(0, 40)}` : ''}
+                      </option>
+                    )
+                  })}
+                </select>
+                <button
+                  onClick={handleAddRepo}
+                  disabled={loading || !selectedRepo}
+                  className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap"
+                >
+                  {loading ? 'Analiz...' : '+ Ekle & Analiz'}
+                </button>
+              </div>
+              {!loadingRepos && githubRepos.length > 0 && (
+                <p className="text-gray-600 text-[10px] mt-2">
+                  {githubRepos.length} repo bulundu, {addedRepoNames.size} tanesi eklenmis
+                </p>
+              )}
             </div>
 
             <div className="flex gap-2 mb-6">

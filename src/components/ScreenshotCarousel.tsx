@@ -38,11 +38,6 @@ export function ScreenshotCarousel({
                 alt={ss.caption || 'Screenshot'}
                 className="w-full h-[400px] object-cover"
               />
-              {ss.caption && (
-                <p className="text-center text-gray-400 text-sm mt-2">
-                  {ss.caption}
-                </p>
-              )}
             </div>
           ))}
         </div>
