@@ -316,6 +316,7 @@ export function AdminProjectCard({
         projectId={project.id}
         token={token}
         attachments={project.attachments || []}
+        screenshots={project.screenshots || []}
         onUpdate={onUpdate}
       />
     </div>

@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import type { Attachment } from '@/lib/types'
+import type { Attachment, Screenshot } from '@/lib/types'
 
 interface FileUploaderProps {
   projectId: string
   token: string
   attachments: Attachment[]
+  screenshots: Screenshot[]
   onUpdate: () => void
 }
 
@@ -24,7 +25,7 @@ const TYPE_ICONS: Record<string, string> = {
   other: '📎',
 }
 
-export function FileUploader({ projectId, token, attachments, onUpdate }: FileUploaderProps) {
+export function FileUploader({ projectId, token, attachments, screenshots, onUpdate }: FileUploaderProps) {
   const [uploading, setUploading] = useState(false)
   const [uploadType, setUploadType] = useState<string>('auto')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -65,10 +66,23 @@ export function FileUploader({ projectId, token, attachments, onUpdate }: FileUp
     onUpdate()
   }
 
-  const screenshots = attachments.filter(a => a.file_type === 'screenshot')
+  async function handleDeleteScreenshot(screenshotId: string) {
+    await fetch('/api/upload', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ screenshotId }),
+    })
+    onUpdate()
+  }
+
+  const screenshotAttachments = attachments.filter(a => a.file_type === 'screenshot')
   const presentations = attachments.filter(a => a.file_type === 'presentation')
   const htmlFiles = attachments.filter(a => a.file_type === 'html')
   const others = attachments.filter(a => a.file_type === 'other')
+  const hasAnyContent = attachments.length > 0 || screenshots.length > 0
 
   return (
     <div className="mt-3 border-t border-gray-700 pt-3">
@@ -100,14 +114,38 @@ export function FileUploader({ projectId, token, attachments, onUpdate }: FileUp
       </div>
 
       {/* Uploaded Files List */}
-      {attachments.length > 0 && (
+      {hasAnyContent && (
         <div className="space-y-2">
-          {/* Screenshots */}
+          {/* Screenshots from screenshots table */}
           {screenshots.length > 0 && (
             <div>
-              <p className="text-gray-500 text-[10px] uppercase mb-1">Ekran Goruntuleri ({screenshots.length})</p>
+              <p className="text-gray-500 text-[10px] uppercase mb-1">Screenshots Tablosu ({screenshots.length})</p>
               <div className="flex gap-1 flex-wrap">
-                {screenshots.map((a) => (
+                {screenshots.map((ss) => (
+                  <div key={ss.id} className="relative group">
+                    <img
+                      src={ss.image_url}
+                      alt={ss.caption}
+                      className="h-14 rounded border border-gray-700 object-cover"
+                    />
+                    <button
+                      onClick={() => handleDeleteScreenshot(ss.id)}
+                      className="absolute -top-1 -right-1 bg-red-600 text-white w-4 h-4 rounded-full text-[10px] hidden group-hover:flex items-center justify-center"
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Screenshots from attachments */}
+          {screenshotAttachments.length > 0 && (
+            <div>
+              <p className="text-gray-500 text-[10px] uppercase mb-1">Ekran Goruntuleri ({screenshotAttachments.length})</p>
+              <div className="flex gap-1 flex-wrap">
+                {screenshotAttachments.map((a) => (
                   <div key={a.id} className="relative group">
                     <img
                       src={a.file_url}

@@ -9,8 +9,9 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
+  const screenshotAttachment = project.attachments?.find(a => a.file_type === 'screenshot')
   const thumbnail =
-    project.screenshots?.[0]?.image_url || '/placeholder.png'
+    project.screenshots?.[0]?.image_url || screenshotAttachment?.file_url || '/placeholder.png'
 
   return (
     <Link href={`/project/${project.slug}`}>

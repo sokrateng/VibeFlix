@@ -164,19 +164,27 @@ export default async function ProjectPage({ params }: PageProps) {
               </h2>
 
               {presentations.map((a) => (
-                <div key={a.id} className="mb-3 flex items-center gap-3">
-                  <span className="text-2xl">📊</span>
-                  <div>
+                <div key={a.id} className="mb-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl">📊</span>
+                    <div>
+                      <p className="text-white">{a.file_name}</p>
+                      <p className="text-gray-500 text-xs">PowerPoint Sunum</p>
+                    </div>
                     <a
                       href={a.file_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
+                      className="text-blue-400 text-xs hover:underline ml-auto"
                     >
-                      {a.file_name}
+                      Indir
                     </a>
-                    <p className="text-gray-500 text-xs">PowerPoint Sunum</p>
                   </div>
+                  <iframe
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(a.file_url)}&embedded=true`}
+                    className="w-full h-[500px] rounded border border-gray-700"
+                    title={a.file_name}
+                  />
                 </div>
               ))}
 

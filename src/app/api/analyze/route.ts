@@ -36,61 +36,6 @@ function buildBasicAnalysis(
   }
 }
 
-async function captureScreenshots(
-  demoUrl: string,
-  projectId: string,
-  supabase: ReturnType<typeof createServerClient>
-): Promise<void> {
-  const viewports = [
-    { width: 1280, height: 800, label: 'Desktop ana sayfa' },
-    { width: 1280, height: 800, label: 'Desktop scroll', scroll: true },
-    { width: 375, height: 812, label: 'Mobil gorunum' },
-  ]
-
-  for (let i = 0; i < viewports.length; i++) {
-    const vp = viewports[i]
-    try {
-      // Try Microlink first
-      let screenshotUrl = ''
-      const params = new URLSearchParams({
-        url: demoUrl,
-        screenshot: 'true',
-        meta: 'false',
-        embed: 'screenshot.url',
-        'viewport.width': String(vp.width),
-        'viewport.height': String(vp.height),
-      })
-      if (vp.scroll) params.set('scroll', '600')
-
-      const res = await fetch(`https://api.microlink.io?${params}`)
-      if (res.ok && res.headers.get('content-type')?.includes('image')) {
-        // Upload image to Supabase Storage
-        const buffer = await res.arrayBuffer()
-        const fileName = `${projectId}/screenshot-${i}.png`
-        await supabase.storage.from('screenshots').upload(fileName, buffer, {
-          contentType: 'image/png',
-          upsert: true,
-        })
-        const { data: urlData } = supabase.storage.from('screenshots').getPublicUrl(fileName)
-        screenshotUrl = urlData.publicUrl
-      } else {
-        // Fallback to Thum.io
-        screenshotUrl = `https://image.thum.io/get/width/${vp.width}/crop/${vp.height}/${demoUrl}`
-      }
-
-      if (screenshotUrl) {
-        await supabase.from('screenshots').insert({
-          project_id: projectId,
-          image_url: screenshotUrl,
-          caption: vp.label,
-          sort_order: i,
-        })
-      }
-    } catch (err) {
-      console.error(`Screenshot ${i} failed:`, err instanceof Error ? err.message : err)
-    }
-  }
-}
 
 export async function POST(
   request: NextRequest
@@ -177,13 +122,6 @@ export async function POST(
 
     if (error || !data) {
       throw new Error(`Upsert failed: ${error?.message}`)
-    }
-
-    // Capture screenshots if demo URL exists
-    if (repo.homepage) {
-      captureScreenshots(repo.homepage, data.id, supabase).catch((err) =>
-        console.error('Screenshot capture failed:', err)
-      )
     }
 
     return NextResponse.json({ success: true, data: { id: data.id, ai_used: aiUsed } })

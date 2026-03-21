@@ -9,8 +9,9 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ project }: HeroSectionProps) {
+  const screenshotAttachment = project.attachments?.find(a => a.file_type === 'screenshot')
   const bgImage =
-    project.screenshots?.[0]?.image_url || '/placeholder.png'
+    project.screenshots?.[0]?.image_url || screenshotAttachment?.file_url || '/placeholder.png'
 
   return (
     <section className="relative h-[60vh] min-h-[400px] mb-8">

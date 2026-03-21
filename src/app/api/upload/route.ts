@@ -107,8 +107,13 @@ export async function DELETE(
   }
 
   try {
-    const { attachmentId } = await request.json()
+    const { attachmentId, screenshotId } = await request.json()
     const supabase = createServerClient()
+
+    if (screenshotId) {
+      await supabase.from('screenshots').delete().eq('id', screenshotId)
+      return NextResponse.json({ success: true })
+    }
 
     const { data: attachment } = await supabase
       .from('attachments')
