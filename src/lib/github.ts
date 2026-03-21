@@ -63,6 +63,37 @@ export async function fetchAllRepos(): Promise<GitHubRepo[]> {
   return res.json()
 }
 
+export async function fetchPackageJson(repoName: string): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/contents/package.json`,
+      { headers: { ...headers, Accept: 'application/vnd.github.v3.raw' } }
+    )
+    if (!res.ok) return ''
+    return res.text()
+  } catch {
+    return ''
+  }
+}
+
+export async function fetchFileTree(repoName: string): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/git/trees/main?recursive=1`,
+      { headers }
+    )
+    if (!res.ok) return ''
+    const data = await res.json()
+    const paths = (data.tree || [])
+      .filter((t: { type: string }) => t.type === 'blob')
+      .map((t: { path: string }) => t.path)
+      .slice(0, 50)
+    return paths.join('\n')
+  } catch {
+    return ''
+  }
+}
+
 export function slugify(name: string): string {
   return name
     .toLowerCase()

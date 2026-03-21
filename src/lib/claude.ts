@@ -35,25 +35,42 @@ function buildPrompt(params: {
   languages: Record<string, number>
   description: string | null
   repoName: string
+  packageJson?: string
+  fileTree?: string
 }): string {
   const categoryNames = DEFAULT_CATEGORIES.map((c) => c.name).join(', ')
   const langList = Object.keys(params.languages).join(', ')
 
-  return `Analyze this GitHub repository and return JSON.
-
-Repository: ${params.repoName}
+  let context = `Repository: ${params.repoName}
 Description: ${params.description || 'None'}
 Languages: ${langList}
-README (first 2000 chars):
-${params.readme.slice(0, 2000)}
+README (first 3000 chars):
+${params.readme.slice(0, 3000)}`
+
+  if (params.packageJson) {
+    context += `\n\npackage.json (dependencies):
+${params.packageJson.slice(0, 1500)}`
+  }
+
+  if (params.fileTree) {
+    context += `\n\nFile structure:
+${params.fileTree.slice(0, 1000)}`
+  }
+
+  return `Analyze this GitHub repository thoroughly and return JSON.
+
+${context}
 
 Return ONLY valid JSON with these fields:
 {
-  "description": "1-2 sentence Turkish description of what this project does",
+  "description": "2-3 sentence Turkish description. What problem does it solve? Who is it for?",
   "category": "one of: ${categoryNames}",
-  "ai_trailer": "3-4 sentence engaging Turkish summary, like a Netflix trailer",
-  "activity": "aktif or arsiv (based on how maintained it looks)",
-  "tech_stack": ["array", "of", "technologies", "used"]
+  "ai_trailer": "5-6 sentence engaging Turkish summary like a Netflix trailer. Highlight key features, target audience, and what makes it unique.",
+  "activity": "aktif or arsiv (based on recent activity)",
+  "tech_stack": ["detailed array — include frameworks, libraries, tools, not just languages. e.g. React, Express, Supabase, Tailwind CSS"],
+  "features": "Bullet-point feature list in Turkish, 3-5 items, separated by newlines. Each starts with •",
+  "use_case": "1-2 sentence Turkish description of target user and usage scenario",
+  "complexity": "one of: basit, orta, karmasik (based on file count, dependencies, architecture)"
 }`
 }
 
@@ -69,7 +86,7 @@ async function analyzeWithClaude(prompt: string, apiKey: string, model: string):
   const anthropic = new Anthropic({ apiKey })
   const message = await anthropic.messages.create({
     model,
-    max_tokens: 1024,
+    max_tokens: 2048,
     messages: [{ role: 'user', content: prompt }],
   })
   return message.content[0].type === 'text' ? message.content[0].text : ''
@@ -87,6 +104,8 @@ export async function analyzeRepo(params: {
   languages: Record<string, number>
   description: string | null
   repoName: string
+  packageJson?: string
+  fileTree?: string
 }): Promise<AiAnalysisResult> {
   const config = await getAiConfig()
   const prompt = buildPrompt(params)

@@ -94,6 +94,12 @@ export default async function ProjectPage({ params }: PageProps) {
             <span className="text-gray-500">Durum</span>
             <p className="text-white mt-1">{activityLabel}</p>
           </div>
+          {project.complexity && (
+            <div className="bg-[#1F1F1F] rounded-lg p-4">
+              <span className="text-gray-500">Karmasiklik</span>
+              <p className="text-white mt-1 capitalize">{project.complexity}</p>
+            </div>
+          )}
         </div>
 
         {project.tech_stack.length > 0 && (
@@ -109,8 +115,30 @@ export default async function ProjectPage({ params }: PageProps) {
           </div>
         )}
 
-        {project.ai_trailer && (
+        {project.features && (
           <section className="mt-8 bg-[#1F1F1F] rounded-lg p-6">
+            <h2 className="text-xl font-bold text-white mb-3">
+              Ozellikler
+            </h2>
+            <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+              {project.features}
+            </p>
+          </section>
+        )}
+
+        {project.use_case && (
+          <section className="mt-4 bg-[#1F1F1F] rounded-lg p-6">
+            <h2 className="text-xl font-bold text-white mb-3">
+              Kullanim Senaryosu
+            </h2>
+            <p className="text-gray-300 leading-relaxed">
+              {project.use_case}
+            </p>
+          </section>
+        )}
+
+        {project.ai_trailer && (
+          <section className="mt-4 bg-[#1F1F1F] rounded-lg p-6">
             <h2 className="text-xl font-bold text-white mb-3">
               Proje Fragmani
             </h2>

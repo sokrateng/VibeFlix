@@ -1,5 +1,6 @@
 export type ProjectStatus = 'NEW' | 'ANALYZING' | 'PENDING' | 'APPROVED' | 'REJECTED'
 export type ActivityStatus = 'aktif' | 'arsiv' | 'bakimda'
+export type ComplexityLevel = 'basit' | 'orta' | 'karmasik'
 
 export interface Project {
   id: string
@@ -15,6 +16,9 @@ export interface Project {
   last_updated: string | null
   activity: ActivityStatus
   ai_trailer: string
+  features: string
+  use_case: string
+  complexity: ComplexityLevel
   sort_order: number
   created_at: string
   updated_at: string
@@ -44,6 +48,9 @@ export interface AiAnalysisResult {
   ai_trailer: string
   activity: ActivityStatus
   tech_stack: string[]
+  features: string
+  use_case: string
+  complexity: ComplexityLevel
 }
 
 export interface ApiResponse<T> {

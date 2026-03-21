@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { verifyAdminToken } from '@/lib/auth'
-import { fetchRepo, fetchReadme, fetchLanguages, slugify } from '@/lib/github'
+import { fetchRepo, fetchReadme, fetchLanguages, fetchPackageJson, fetchFileTree, slugify } from '@/lib/github'
 import { analyzeRepo } from '@/lib/claude'
 import { DEFAULT_CATEGORIES } from '@/lib/constants'
 import type { ApiResponse, AiAnalysisResult } from '@/lib/types'
@@ -30,6 +30,65 @@ function buildBasicAnalysis(
     ai_trailer: `${repo.name} — ${catDisplay} kategorisinde bir proje. ${techStack.length > 0 ? `Kullanilan teknolojiler: ${techStack.join(', ')}.` : ''} ${repo.description || ''}`.trim(),
     activity: 'aktif',
     tech_stack: techStack,
+    features: '',
+    use_case: '',
+    complexity: 'orta',
+  }
+}
+
+async function captureScreenshots(
+  demoUrl: string,
+  projectId: string,
+  supabase: ReturnType<typeof createServerClient>
+): Promise<void> {
+  const viewports = [
+    { width: 1280, height: 800, label: 'Desktop ana sayfa' },
+    { width: 1280, height: 800, label: 'Desktop scroll', scroll: true },
+    { width: 375, height: 812, label: 'Mobil gorunum' },
+  ]
+
+  for (let i = 0; i < viewports.length; i++) {
+    const vp = viewports[i]
+    try {
+      // Try Microlink first
+      let screenshotUrl = ''
+      const params = new URLSearchParams({
+        url: demoUrl,
+        screenshot: 'true',
+        meta: 'false',
+        embed: 'screenshot.url',
+        'viewport.width': String(vp.width),
+        'viewport.height': String(vp.height),
+      })
+      if (vp.scroll) params.set('scroll', '600')
+
+      const res = await fetch(`https://api.microlink.io?${params}`)
+      if (res.ok && res.headers.get('content-type')?.includes('image')) {
+        // Upload image to Supabase Storage
+        const buffer = await res.arrayBuffer()
+        const fileName = `${projectId}/screenshot-${i}.png`
+        await supabase.storage.from('screenshots').upload(fileName, buffer, {
+          contentType: 'image/png',
+          upsert: true,
+        })
+        const { data: urlData } = supabase.storage.from('screenshots').getPublicUrl(fileName)
+        screenshotUrl = urlData.publicUrl
+      } else {
+        // Fallback to Thum.io
+        screenshotUrl = `https://image.thum.io/get/width/${vp.width}/crop/${vp.height}/${demoUrl}`
+      }
+
+      if (screenshotUrl) {
+        await supabase.from('screenshots').insert({
+          project_id: projectId,
+          image_url: screenshotUrl,
+          caption: vp.label,
+          sort_order: i,
+        })
+      }
+    } catch (err) {
+      console.error(`Screenshot ${i} failed:`, err instanceof Error ? err.message : err)
+    }
   }
 }
 
@@ -54,7 +113,6 @@ export async function POST(
 
     const supabase = createServerClient()
 
-    // Check if AI is enabled
     const { data: aiSetting } = await supabase
       .from('settings')
       .select('value')
@@ -62,10 +120,12 @@ export async function POST(
       .single()
     const aiEnabled = aiSetting?.value !== 'false'
 
-    const [repo, readme, languages] = await Promise.all([
+    const [repo, readme, languages, packageJson, fileTree] = await Promise.all([
       fetchRepo(repoName),
       fetchReadme(repoName),
       fetchLanguages(repoName),
+      fetchPackageJson(repoName),
+      fetchFileTree(repoName),
     ])
 
     let analysis: AiAnalysisResult
@@ -73,7 +133,14 @@ export async function POST(
 
     if (aiEnabled) {
       try {
-        analysis = await analyzeRepo({ readme, languages, description: repo.description, repoName: repo.name })
+        analysis = await analyzeRepo({
+          readme,
+          languages,
+          description: repo.description,
+          repoName: repo.name,
+          packageJson,
+          fileTree,
+        })
         aiUsed = true
       } catch (aiError) {
         console.error('AI analysis failed, falling back to basic:', aiError instanceof Error ? aiError.message : aiError)
@@ -99,6 +166,9 @@ export async function POST(
           last_updated: repo.updated_at,
           activity: analysis.activity,
           ai_trailer: analysis.ai_trailer,
+          features: analysis.features || '',
+          use_case: analysis.use_case || '',
+          complexity: analysis.complexity || 'orta',
         },
         { onConflict: 'github_repo' }
       )
@@ -107,6 +177,13 @@ export async function POST(
 
     if (error || !data) {
       throw new Error(`Upsert failed: ${error?.message}`)
+    }
+
+    // Capture screenshots if demo URL exists
+    if (repo.homepage) {
+      captureScreenshots(repo.homepage, data.id, supabase).catch((err) =>
+        console.error('Screenshot capture failed:', err)
+      )
     }
 
     return NextResponse.json({ success: true, data: { id: data.id, ai_used: aiUsed } })
