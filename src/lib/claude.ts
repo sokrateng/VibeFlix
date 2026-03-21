@@ -145,10 +145,8 @@ export async function analyzeRepo(params: {
 
   for (const provider of providers) {
     try {
-      console.log(`Trying AI provider: ${provider.name}`)
       const text = await provider.fn()
       const result = parseAiResponse(text)
-      console.log(`AI analysis succeeded with ${provider.name}`)
       return result
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error)

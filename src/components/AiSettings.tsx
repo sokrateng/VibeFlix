@@ -42,20 +42,25 @@ export function AiSettings({ token }: AiSettingsProps) {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch('/api/settings', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const json = await res.json()
-      if (json.success && json.data) {
-        const s = json.data
-        if (s.ai_enabled !== undefined) setAiEnabled(s.ai_enabled !== 'false')
-        if (s.ai_provider) setProvider(s.ai_provider)
-        if (s.gemini_api_key) setGeminiKey(s.gemini_api_key)
-        if (s.gemini_model) setGeminiModel(s.gemini_model)
-        if (s.anthropic_api_key) setClaudeKey(s.anthropic_api_key)
-        if (s.anthropic_model) setClaudeModel(s.anthropic_model)
+      try {
+        const res = await fetch('/api/settings', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const json = await res.json()
+        if (json.success && json.data) {
+          const s = json.data
+          if (s.ai_enabled !== undefined) setAiEnabled(s.ai_enabled !== 'false')
+          if (s.ai_provider) setProvider(s.ai_provider)
+          if (s.gemini_api_key) setGeminiKey(s.gemini_api_key)
+          if (s.gemini_model) setGeminiModel(s.gemini_model)
+          if (s.anthropic_api_key) setClaudeKey(s.anthropic_api_key)
+          if (s.anthropic_model) setClaudeModel(s.anthropic_model)
+        }
+      } catch {
+        // load failure — proceed with defaults
+      } finally {
+        setLoaded(true)
       }
-      setLoaded(true)
     }
     load()
   }, [token])
@@ -63,25 +68,30 @@ export function AiSettings({ token }: AiSettingsProps) {
   async function handleSave() {
     setSaving(true)
     setSaveMsg('')
-    const res = await fetch('/api/settings', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        ai_enabled: aiEnabled ? 'true' : 'false',
-        ai_provider: provider,
-        gemini_api_key: geminiKey,
-        gemini_model: geminiModel,
-        anthropic_api_key: claudeKey,
-        anthropic_model: claudeModel,
-      }),
-    })
-    const json = await res.json()
-    setSaving(false)
-    setSaveMsg(json.success ? 'Kaydedildi!' : `Hata: ${json.error}`)
-    setTimeout(() => setSaveMsg(''), 3000)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ai_enabled: aiEnabled ? 'true' : 'false',
+          ai_provider: provider,
+          gemini_api_key: geminiKey,
+          gemini_model: geminiModel,
+          anthropic_api_key: claudeKey,
+          anthropic_model: claudeModel,
+        }),
+      })
+      const json = await res.json()
+      setSaveMsg(json.success ? 'Kaydedildi!' : `Hata: ${json.error}`)
+    } catch {
+      setSaveMsg('Hata: Ag hatasi')
+    } finally {
+      setSaving(false)
+      setTimeout(() => setSaveMsg(''), 3000)
+    }
   }
 
   async function handleTest(testProvider: string) {
@@ -102,27 +112,38 @@ export function AiSettings({ token }: AiSettingsProps) {
       return
     }
 
-    const res = await fetch('/api/settings/test', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ provider: testProvider, apiKey, model }),
-    })
-    const json = await res.json()
-    if (json.success && json.data) {
-      setTestResult(json.data)
-    } else {
+    try {
+      const res = await fetch('/api/settings/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ provider: testProvider, apiKey, model }),
+      })
+      const json = await res.json()
+      if (json.success && json.data) {
+        setTestResult(json.data)
+      } else {
+        setTestResult({
+          provider: testProvider,
+          model,
+          status: 'error',
+          message: json.error || 'Test basarisiz',
+          latency_ms: 0,
+        })
+      }
+    } catch {
       setTestResult({
         provider: testProvider,
         model,
         status: 'error',
-        message: json.error || 'Test basarisiz',
+        message: 'Ag hatasi — baglanti kontrolu yapiniz',
         latency_ms: 0,
       })
+    } finally {
+      setTesting(null)
     }
-    setTesting(null)
   }
 
   if (!loaded) {

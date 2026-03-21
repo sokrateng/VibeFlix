@@ -28,6 +28,7 @@ export function AdminProjectCard({
   })
   const [saving, setSaving] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
+  const [statusMsg, setStatusMsg] = useState<{type: 'error' | 'success', text: string} | null>(null)
 
   const statusColors: Record<string, string> = {
     NEW: 'bg-blue-500',
@@ -49,70 +50,93 @@ export function AdminProjectCard({
     karmasik: 'bg-red-700',
   }
 
-  async function updateStatus(status: string) {
-    await fetch(`/api/projects/${project.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ status }),
-    })
+  function showStatus(type: 'error' | 'success', text: string) {
+    setStatusMsg({ type, text })
+    setTimeout(() => setStatusMsg(null), 3000)
+  }
 
-    if (status === 'APPROVED') {
-      await fetch('/api/revalidate', {
+  async function updateStatus(status: string) {
+    try {
+      await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      if (status === 'APPROVED') {
+        await fetch('/api/revalidate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ slug: project.slug }),
+        })
+      }
+
+      onUpdate()
+    } catch {
+      showStatus('error', 'Islem basarisiz')
+    }
+  }
+
+  async function toggleFeatured() {
+    try {
+      await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ featured: !project.featured }),
+      })
+      onUpdate()
+    } catch {
+      showStatus('error', 'Islem basarisiz')
+    }
+  }
+
+  async function analyzeRepo() {
+    setAnalyzing(true)
+    try {
+      const repoName = project.github_repo.split('/')[1]
+      await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ slug: project.slug }),
+        body: JSON.stringify({ repoName }),
       })
+      onUpdate()
+    } catch {
+      showStatus('error', 'Islem basarisiz')
+    } finally {
+      setAnalyzing(false)
     }
-
-    onUpdate()
-  }
-
-  async function toggleFeatured() {
-    await fetch(`/api/projects/${project.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ featured: !project.featured }),
-    })
-    onUpdate()
-  }
-
-  async function analyzeRepo() {
-    setAnalyzing(true)
-    const repoName = project.github_repo.split('/')[1]
-    await fetch('/api/analyze', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ repoName }),
-    })
-    setAnalyzing(false)
-    onUpdate()
   }
 
   async function handleSave() {
     setSaving(true)
-    await fetch(`/api/projects/${project.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(form),
-    })
-    setSaving(false)
-    setEditing(false)
-    onUpdate()
+    try {
+      await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(form),
+      })
+      setEditing(false)
+      onUpdate()
+    } catch {
+      showStatus('error', 'Islem basarisiz')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const screenshots = project.screenshots || []
@@ -145,6 +169,12 @@ export function AdminProjectCard({
           {project.status}
         </span>
       </div>
+
+      {statusMsg && (
+        <div className={`text-xs px-2 py-1 rounded mb-2 ${statusMsg.type === 'error' ? 'bg-red-900/50 text-red-300' : 'bg-green-900/50 text-green-300'}`}>
+          {statusMsg.text}
+        </div>
+      )}
 
       {/* Screenshots preview */}
       {screenshots.length > 0 && (

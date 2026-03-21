@@ -28,54 +28,74 @@ const TYPE_ICONS: Record<string, string> = {
 export function FileUploader({ projectId, token, attachments, screenshots, onUpdate }: FileUploaderProps) {
   const [uploading, setUploading] = useState(false)
   const [uploadType, setUploadType] = useState<string>('auto')
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  function showError(text: string) {
+    setUploadError(text)
+    setTimeout(() => setUploadError(null), 3000)
+  }
 
   async function handleUpload(files: FileList | null) {
     if (!files || files.length === 0) return
     setUploading(true)
+    setUploadError(null)
 
-    for (const file of Array.from(files)) {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('projectId', projectId)
-      if (uploadType !== 'auto') {
-        formData.append('fileType', uploadType)
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('projectId', projectId)
+        if (uploadType !== 'auto') {
+          formData.append('fileType', uploadType)
+        }
+
+        await fetch('/api/upload', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        })
       }
 
-      await fetch('/api/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      })
+      if (fileRef.current) fileRef.current.value = ''
+      onUpdate()
+    } catch {
+      showError('Yukleme basarisiz')
+    } finally {
+      setUploading(false)
     }
-
-    setUploading(false)
-    if (fileRef.current) fileRef.current.value = ''
-    onUpdate()
   }
 
   async function handleDelete(attachmentId: string) {
-    await fetch('/api/upload', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ attachmentId }),
-    })
-    onUpdate()
+    try {
+      await fetch('/api/upload', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ attachmentId }),
+      })
+      onUpdate()
+    } catch {
+      showError('Silme basarisiz')
+    }
   }
 
   async function handleDeleteScreenshot(screenshotId: string) {
-    await fetch('/api/upload', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ screenshotId }),
-    })
-    onUpdate()
+    try {
+      await fetch('/api/upload', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ screenshotId }),
+      })
+      onUpdate()
+    } catch {
+      showError('Silme basarisiz')
+    }
   }
 
   const screenshotAttachments = attachments.filter(a => a.file_type === 'screenshot')
@@ -112,6 +132,12 @@ export function FileUploader({ projectId, token, attachments, screenshots, onUpd
           />
         </label>
       </div>
+
+      {uploadError && (
+        <div className="text-xs px-2 py-1 rounded mb-2 bg-red-900/50 text-red-300">
+          {uploadError}
+        </div>
+      )}
 
       {/* Uploaded Files List */}
       {hasAnyContent && (

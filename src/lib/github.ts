@@ -1,5 +1,15 @@
 import { GITHUB_USERNAME } from './constants'
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 10000): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 interface GitHubRepo {
   name: string
   full_name: string
@@ -24,7 +34,7 @@ const headers: HeadersInit = {
 }
 
 export async function fetchRepo(repoName: string): Promise<GitHubRepo> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}`,
     { headers }
   )
@@ -34,7 +44,7 @@ export async function fetchRepo(repoName: string): Promise<GitHubRepo> {
 
 export async function fetchReadme(repoName: string): Promise<string> {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/readme`,
       { headers: { ...headers, Accept: 'application/vnd.github.v3.raw' } }
     )
@@ -46,7 +56,7 @@ export async function fetchReadme(repoName: string): Promise<string> {
 }
 
 export async function fetchLanguages(repoName: string): Promise<GitHubLanguages> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/languages`,
     { headers }
   )
@@ -62,14 +72,14 @@ export async function fetchAllRepos(): Promise<GitHubRepo[]> {
     ? `https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner`
     : `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`
 
-  const res = await fetch(url, { headers })
+  const res = await fetchWithTimeout(url, { headers })
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
   return res.json()
 }
 
 export async function fetchPackageJson(repoName: string): Promise<string> {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/contents/package.json`,
       { headers: { ...headers, Accept: 'application/vnd.github.v3.raw' } }
     )
@@ -82,7 +92,7 @@ export async function fetchPackageJson(repoName: string): Promise<string> {
 
 export async function fetchFileTree(repoName: string): Promise<string> {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/git/trees/main?recursive=1`,
       { headers }
     )
