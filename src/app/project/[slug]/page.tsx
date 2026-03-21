@@ -140,7 +140,7 @@ export default async function ProjectPage({ params }: PageProps) {
         {project.ai_trailer && (
           <section className="mt-4 bg-[#1F1F1F] rounded-lg p-6">
             <h2 className="text-xl font-bold text-white mb-3">
-              Proje Fragmani
+              Proje Aciklamasi
             </h2>
             <p className="text-gray-300 leading-relaxed">
               {project.ai_trailer}
