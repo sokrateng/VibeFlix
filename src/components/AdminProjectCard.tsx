@@ -6,12 +6,14 @@ interface AdminProjectCardProps {
   project: Project
   token: string
   onUpdate: () => void
+  onDelete: (id: string) => void
 }
 
 export function AdminProjectCard({
   project,
   token,
   onUpdate,
+  onDelete,
 }: AdminProjectCardProps) {
   const statusColors: Record<string, string> = {
     NEW: 'bg-blue-500',
@@ -125,6 +127,12 @@ export function AdminProjectCard({
         >
           GitHub
         </a>
+        <button
+          onClick={() => onDelete(project.id)}
+          className="bg-red-900 text-red-300 px-3 py-1 rounded text-sm hover:bg-red-800 ml-auto"
+        >
+          Sil
+        </button>
       </div>
     </div>
   )

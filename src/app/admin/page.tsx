@@ -39,6 +39,25 @@ export default function AdminPage() {
     setAuthenticated(true)
   }
 
+  async function handleDeleteProject(id: string) {
+    await fetch(`/api/projects/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    fetchProjects()
+  }
+
+  async function handleDeleteAll() {
+    if (!confirm('Tum projeleri silmek istediginize emin misiniz?')) return
+    for (const p of projects) {
+      await fetch(`/api/projects/${p.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    }
+    fetchProjects()
+  }
+
   async function handleAddRepo() {
     if (!newRepoName.trim()) return
     setLoading(true)
@@ -172,8 +191,20 @@ export default function AdminPage() {
                 project={project}
                 token={token}
                 onUpdate={fetchProjects}
+                onDelete={handleDeleteProject}
               />
             ))}
+
+            {projects.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-gray-700 flex justify-end">
+                <button
+                  onClick={handleDeleteAll}
+                  className="bg-red-900 text-red-300 px-4 py-2 rounded text-sm hover:bg-red-800"
+                >
+                  Tum Projeleri Sil ({projects.length})
+                </button>
+              </div>
+            )}
 
             {filtered.length === 0 && (
               <p className="text-gray-500 text-center py-8">
