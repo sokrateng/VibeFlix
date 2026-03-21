@@ -189,25 +189,27 @@ export default async function ProjectPage({ params }: PageProps) {
               ))}
 
               {htmlFiles.map((a) => (
-                <div key={a.id} className="mb-3">
+                <div key={a.id} className="mb-4">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-2xl">🌐</span>
                     <div>
-                      <a
-                        href={a.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:underline"
-                      >
-                        {a.file_name}
-                      </a>
+                      <p className="text-white">{a.file_name}</p>
                       <p className="text-gray-500 text-xs">HTML Icerik</p>
                     </div>
+                    <a
+                      href={a.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 text-xs hover:underline ml-auto"
+                    >
+                      Yeni sekmede ac
+                    </a>
                   </div>
                   <iframe
-                    src={a.file_url}
-                    className="w-full h-[400px] rounded border border-gray-700 bg-white"
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(a.file_url)}&embedded=true`}
+                    className="w-full h-[500px] rounded border border-gray-700 bg-white"
                     title={a.file_name}
+                    sandbox="allow-scripts allow-same-origin"
                   />
                 </div>
               ))}

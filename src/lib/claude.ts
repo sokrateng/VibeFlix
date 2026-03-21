@@ -37,8 +37,9 @@ function buildPrompt(params: {
   repoName: string
   packageJson?: string
   fileTree?: string
+  categoryNames?: string
 }): string {
-  const categoryNames = DEFAULT_CATEGORIES.map((c) => c.name).join(', ')
+  const categories = params.categoryNames || DEFAULT_CATEGORIES.map((c) => c.name).join(', ')
   const langList = Object.keys(params.languages).join(', ')
 
   let context = `Repository: ${params.repoName}
@@ -64,7 +65,7 @@ ${context}
 Return ONLY valid JSON with these fields:
 {
   "description": "2-3 sentence Turkish description. What problem does it solve? Who is it for?",
-  "category": "one of: ${categoryNames}",
+  "category": "one of: ${categories}",
   "ai_trailer": "5-6 sentence engaging Turkish summary like a Netflix trailer. Highlight key features, target audience, and what makes it unique.",
   "activity": "aktif or arsiv (based on recent activity)",
   "tech_stack": ["detailed array — include frameworks, libraries, tools, not just languages. e.g. React, Express, Supabase, Tailwind CSS"],
@@ -108,7 +109,16 @@ export async function analyzeRepo(params: {
   fileTree?: string
 }): Promise<AiAnalysisResult> {
   const config = await getAiConfig()
-  const prompt = buildPrompt(params)
+
+  // Fetch categories from DB for AI prompt
+  const supabase = createServerClient()
+  const { data: cats } = await supabase
+    .from('categories')
+    .select('name')
+    .order('sort_order', { ascending: true })
+  const categoryNames = cats?.map((c: { name: string }) => c.name).join(', ') || ''
+
+  const prompt = buildPrompt({ ...params, categoryNames })
 
   // Primary provider first, then fallback
   const providers = []

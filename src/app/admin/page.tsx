@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AdminProjectCard } from '@/components/AdminProjectCard'
 import { AiSettings } from '@/components/AiSettings'
+import { CategoryManager } from '@/components/CategoryManager'
 import type { Project } from '@/lib/types'
 
 interface GitHubRepo {
@@ -20,7 +21,7 @@ export default function AdminPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [filter, setFilter] = useState<string>('ALL')
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'projects' | 'ai'>('projects')
+  const [activeTab, setActiveTab] = useState<'projects' | 'categories' | 'ai'>('projects')
   const [githubRepos, setGithubRepos] = useState<GitHubRepo[]>([])
   const [selectedRepo, setSelectedRepo] = useState('')
   const [loadingRepos, setLoadingRepos] = useState(false)
@@ -158,6 +159,16 @@ export default function AdminPage() {
             Projeler
           </button>
           <button
+            onClick={() => setActiveTab('categories')}
+            className={`px-4 py-2 rounded-t text-sm font-bold ${
+              activeTab === 'categories'
+                ? 'bg-[#1F1F1F] text-white'
+                : 'text-gray-500 hover:text-white'
+            }`}
+          >
+            Kategoriler
+          </button>
+          <button
             onClick={() => setActiveTab('ai')}
             className={`px-4 py-2 rounded-t text-sm font-bold ${
               activeTab === 'ai'
@@ -168,6 +179,9 @@ export default function AdminPage() {
             AI Ayarlari
           </button>
         </div>
+
+        {/* Categories Tab */}
+        {activeTab === 'categories' && <CategoryManager token={token} />}
 
         {/* AI Settings Tab */}
         {activeTab === 'ai' && <AiSettings token={token} />}
