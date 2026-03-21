@@ -34,6 +34,7 @@ export function AiSettings({ token }: AiSettingsProps) {
   const [claudeModel, setClaudeModel] = useState('claude-haiku-4-5-20251001')
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState<string | null>(null)
+  const [aiEnabled, setAiEnabled] = useState(true)
   const [testResult, setTestResult] = useState<TestResult | null>(null)
   const [saveMsg, setSaveMsg] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -46,6 +47,7 @@ export function AiSettings({ token }: AiSettingsProps) {
       const json = await res.json()
       if (json.success && json.data) {
         const s = json.data
+        if (s.ai_enabled !== undefined) setAiEnabled(s.ai_enabled !== 'false')
         if (s.ai_provider) setProvider(s.ai_provider)
         if (s.gemini_api_key) setGeminiKey(s.gemini_api_key)
         if (s.gemini_model) setGeminiModel(s.gemini_model)
@@ -67,6 +69,7 @@ export function AiSettings({ token }: AiSettingsProps) {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
+        ai_enabled: aiEnabled ? 'true' : 'false',
         ai_provider: provider,
         gemini_api_key: geminiKey,
         gemini_model: geminiModel,
@@ -132,6 +135,30 @@ export function AiSettings({ token }: AiSettingsProps) {
   return (
     <div className="bg-[#1F1F1F] rounded-lg p-6">
       <h2 className="text-xl font-bold text-white mb-4">AI Ayarlari</h2>
+
+      {/* AI Enable/Disable */}
+      <div className="mb-6 flex items-center justify-between p-4 rounded-lg bg-black/20">
+        <div>
+          <p className="text-white font-bold">AI Analiz</p>
+          <p className="text-gray-500 text-xs mt-1">
+            {aiEnabled
+              ? 'Repolar AI ile analiz edilir (aciklama, kategori, trailer)'
+              : 'AI kapali — GitHub bilgileriyle basit analiz yapilir'}
+          </p>
+        </div>
+        <button
+          onClick={() => setAiEnabled(!aiEnabled)}
+          className={`relative w-14 h-7 rounded-full transition-colors ${
+            aiEnabled ? 'bg-green-600' : 'bg-gray-600'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 w-6 h-6 bg-white rounded-full transition-transform ${
+              aiEnabled ? 'translate-x-7' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+      </div>
 
       {/* Provider Selection */}
       <div className="mb-6">
