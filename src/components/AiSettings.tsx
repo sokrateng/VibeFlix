@@ -15,6 +15,7 @@ interface TestResult {
 }
 
 const GEMINI_MODELS = [
+  'gemini-2.5-flash',
   'gemini-2.5-flash-preview-05-20',
   'gemini-2.0-flash',
   'gemini-2.0-flash-lite',
