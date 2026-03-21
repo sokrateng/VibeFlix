@@ -55,10 +55,14 @@ export async function fetchLanguages(repoName: string): Promise<GitHubLanguages>
 }
 
 export async function fetchAllRepos(): Promise<GitHubRepo[]> {
-  const res = await fetch(
-    `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`,
-    { headers }
-  )
+  // Use /user/repos for authenticated access (includes private repos)
+  // Falls back to /users/:user/repos for unauthenticated
+  const isAuthenticated = !!process.env.GITHUB_TOKEN
+  const url = isAuthenticated
+    ? `https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner`
+    : `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`
+
+  const res = await fetch(url, { headers })
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
   return res.json()
 }
