@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAdminToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (!verifyAdminToken(request)) {
-    return new NextResponse('Unauthorized', { status: 401 })
-  }
-
   const url = request.nextUrl.searchParams.get('url')
   if (!url) {
     return new NextResponse('url parameter required', { status: 400 })
