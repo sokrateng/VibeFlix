@@ -99,26 +99,38 @@ export default function AdminPage() {
     fetchProjects()
   }
 
+  /* ── Login screen ── */
   if (!authenticated) {
     return (
-      <main className="min-h-screen bg-[#141414] flex items-center justify-center">
-        <div className="bg-[#1F1F1F] rounded-lg p-8 w-full max-w-sm">
-          <h1 className="text-2xl font-bold text-white mb-4">
+      <main className="min-h-screen bg-surface flex items-center justify-center relative overflow-hidden">
+        {/* Ambient glow */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-20"
+          style={{ background: 'radial-gradient(ellipse at 50% 60%, #7e51ff 0%, transparent 60%)' }}
+          aria-hidden="true"
+        />
+
+        <div className="glass-elevated rounded-2xl p-8 w-full max-w-sm relative z-10 glow-primary">
+          <h1 className="font-heading text-2xl font-bold text-on-surface mb-1">
             VibeFlix Admin
           </h1>
+          <p className="font-sans text-sm text-on-surface-variant mb-6">
+            Devam etmek icin token giriniz
+          </p>
           <input
             type="password"
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder="Admin token"
-            className="w-full bg-black/30 text-white border border-gray-600 rounded px-3 py-2 mb-4"
+            className="glass-input w-full px-4 py-2.5 mb-4 font-sans"
             onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+            autoComplete="current-password"
           />
           <button
             onClick={handleLogin}
-            className="w-full bg-[#E50914] text-white py-2 rounded font-bold hover:bg-red-700"
+            className="btn-gradient w-full py-2.5 rounded-xl font-heading font-bold text-sm"
           >
-            Giris
+            Giris Yap
           </button>
         </div>
       </main>
@@ -139,47 +151,53 @@ export default function AdminPage() {
     REJECTED: projects.filter((p) => p.status === 'REJECTED').length,
   }
 
+  const filterAccentClass: Record<string, string> = {
+    ALL: 'text-primary border-primary/40 bg-primary/10',
+    PENDING: 'text-yellow-400 border-yellow-400/40 bg-yellow-400/10',
+    APPROVED: 'text-green-400 border-green-400/40 bg-green-400/10',
+    REJECTED: 'text-[color:var(--error)] border-[color:var(--error)]/40 bg-[color:var(--error)]/10',
+  }
+
   return (
-    <main className="min-h-screen bg-[#141414] p-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-6">
+    <main className="min-h-screen bg-surface relative overflow-x-hidden">
+      {/* Ambient glow */}
+      <div
+        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-10"
+        style={{ background: 'radial-gradient(ellipse at center, #7e51ff 0%, transparent 70%)' }}
+        aria-hidden="true"
+      />
+
+      {/* Glass Navbar */}
+      <nav className="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <h1 className="font-heading text-xl font-bold text-gradient">
           VibeFlix Admin
         </h1>
 
-        {/* Tab Navigation */}
-        <div className="flex gap-1 mb-6 border-b border-gray-700 pb-1">
-          <button
-            onClick={() => setActiveTab('projects')}
-            className={`px-4 py-2 rounded-t text-sm font-bold ${
-              activeTab === 'projects'
-                ? 'bg-[#1F1F1F] text-white'
-                : 'text-gray-500 hover:text-white'
-            }`}
-          >
-            Projeler
-          </button>
-          <button
-            onClick={() => setActiveTab('categories')}
-            className={`px-4 py-2 rounded-t text-sm font-bold ${
-              activeTab === 'categories'
-                ? 'bg-[#1F1F1F] text-white'
-                : 'text-gray-500 hover:text-white'
-            }`}
-          >
-            Kategoriler
-          </button>
-          <button
-            onClick={() => setActiveTab('ai')}
-            className={`px-4 py-2 rounded-t text-sm font-bold ${
-              activeTab === 'ai'
-                ? 'bg-[#1F1F1F] text-white'
-                : 'text-gray-500 hover:text-white'
-            }`}
-          >
-            AI Ayarlari
-          </button>
+        {/* Tab pills */}
+        <div className="flex gap-1.5" role="tablist">
+          {(['projects', 'categories', 'ai'] as const).map((tab) => {
+            const label = { projects: 'Projeler', categories: 'Kategoriler', ai: 'AI Ayarlari' }[tab]
+            const isActive = activeTab === tab
+            return (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-1.5 rounded-full text-sm font-mono transition-all ${
+                  isActive
+                    ? 'bg-primary/15 text-primary border border-primary/30'
+                    : 'text-on-surface-variant hover:text-on-surface glass'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
         </div>
+      </nav>
 
+      <div className="max-w-3xl mx-auto px-6 py-8 relative z-10">
         {/* Categories Tab */}
         {activeTab === 'categories' && <CategoryManager token={token} />}
 
@@ -189,14 +207,16 @@ export default function AdminPage() {
         {/* Projects Tab */}
         {activeTab === 'projects' && (
           <>
-            {/* Repo Selector */}
-            <div className="bg-[#1F1F1F] rounded-lg p-4 mb-6">
-              <p className="text-gray-400 text-xs mb-2">GitHub Repo Sec</p>
-              <div className="flex gap-2">
+            {/* Repo selector */}
+            <div className="glass-card p-5 mb-6">
+              <p className="font-mono text-xs text-on-surface-variant mb-3 uppercase tracking-wider">
+                GitHub Repo Sec
+              </p>
+              <div className="flex gap-3">
                 <select
                   value={selectedRepo}
                   onChange={(e) => setSelectedRepo(e.target.value)}
-                  className="flex-1 bg-black/30 text-white border border-gray-600 rounded px-3 py-2 text-sm"
+                  className="glass-input flex-1 px-3 py-2 text-sm font-sans"
                   disabled={loadingRepos}
                 >
                   <option value="">
@@ -205,11 +225,7 @@ export default function AdminPage() {
                   {githubRepos.map((repo) => {
                     const isAdded = addedRepoNames.has(repo.name)
                     return (
-                      <option
-                        key={repo.name}
-                        value={repo.name}
-                        disabled={isAdded}
-                      >
+                      <option key={repo.name} value={repo.name} disabled={isAdded}>
                         {repo.name}
                         {repo.language ? ` (${repo.language})` : ''}
                         {isAdded ? ' — Eklendi' : ''}
@@ -221,36 +237,37 @@ export default function AdminPage() {
                 <button
                   onClick={handleAddRepo}
                   disabled={loading || !selectedRepo}
-                  className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap"
+                  className="btn-gradient px-5 py-2 rounded-xl font-mono font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none whitespace-nowrap"
                 >
                   {loading ? 'Analiz...' : '+ Ekle & Analiz'}
                 </button>
               </div>
               {!loadingRepos && githubRepos.length > 0 && (
-                <p className="text-gray-600 text-[10px] mt-2">
+                <p className="font-mono text-[10px] text-on-surface-variant/50 mt-2.5">
                   {githubRepos.length} repo bulundu, {addedRepoNames.size} tanesi eklenmis
                 </p>
               )}
             </div>
 
-            <div className="flex gap-2 mb-6">
-              {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(
-                (s) => (
-                  <button
-                    key={s}
-                    onClick={() => setFilter(s)}
-                    className={`px-3 py-1 rounded text-sm ${
-                      filter === s
-                        ? 'bg-[#E50914] text-white'
-                        : 'bg-[#1F1F1F] text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    {s} ({counts[s]})
-                  </button>
-                )
-              )}
+            {/* Stats row */}
+            <div className="grid grid-cols-4 gap-2 mb-6">
+              {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setFilter(s)}
+                  className={`glass-card p-3 text-center transition-all ${
+                    filter === s
+                      ? filterAccentClass[s]
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <p className="font-heading text-2xl font-bold">{counts[s]}</p>
+                  <p className="font-mono text-[10px] uppercase tracking-wider mt-0.5">{s}</p>
+                </button>
+              ))}
             </div>
 
+            {/* Project list */}
             {filtered.map((project) => (
               <AdminProjectCard
                 key={project.id}
@@ -261,19 +278,21 @@ export default function AdminPage() {
               />
             ))}
 
+            {/* Delete all */}
             {projects.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-gray-700 flex justify-end">
+              <div className="mt-8 pt-4 border-t border-white/5 flex justify-end">
                 <button
                   onClick={handleDeleteAll}
-                  className="bg-red-900 text-red-300 px-4 py-2 rounded text-sm hover:bg-red-800"
+                  className="glass px-4 py-2 rounded-xl text-sm font-mono text-[color:var(--error)] border-[color:var(--error)]/20 hover:bg-[color:var(--error)]/10 transition-all"
                 >
                   Tum Projeleri Sil ({projects.length})
                 </button>
               </div>
             )}
 
+            {/* Empty state */}
             {filtered.length === 0 && (
-              <p className="text-gray-500 text-center py-8">
+              <p className="font-sans text-on-surface-variant text-center py-12">
                 Bu filtrede proje yok
               </p>
             )}

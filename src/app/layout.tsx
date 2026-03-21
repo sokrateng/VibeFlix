@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'VibeFlix - Project Catalog',
-  description: 'Netflix-style catalog of vibe coding projects by sokrateng',
+  description: 'Cinematic developer portfolio showcase by sokrateng',
 }
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
-      <body className="bg-[#141414] min-h-screen">{children}</body>
+      <body className="bg-surface min-h-screen antialiased">{children}</body>
     </html>
   )
 }
